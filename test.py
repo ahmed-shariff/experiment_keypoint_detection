@@ -9,11 +9,12 @@ DEVICE = 'cuda'
 
 
 def video_test():
-    cap_div = cv2.VideoCapture("/dev/video0")
-    model = TestKeypointRcnn()
+    cap_div = cv2.VideoCapture("20190923_144136.mp4")
+    model = TestKeypointRcnn(1000)
     while True:
         r, f = cap_div.read()
-        model(f, 10)
+        # display_image(f, 10)
+        model(f, 50)
     cv2.destroyAllWindows()
 
 
@@ -43,7 +44,13 @@ class TestKeypointRcnn():
             if predictions['scores'][idx] > 0.5:
                 colour = [int((255/predictions_count) * idx), 255, 255]
                 cv2.rectangle(img, tuple(point[:2]), tuple(point[2:]), tuple(colour), 1)
+                x = (point[2] + point[0]) / 2
+                y = point[3]
+                cv2.circle(img, (int(x), int(y)), 1, colour, 1, 1)
                 for kp_idx, kp in enumerate(predictions['keypoints'][idx]):
+                    continue
+                    if kp_idx not in [14, 13]:
+                        continue
                     kp = kp.cpu().detach().numpy()
                     try:
                         colour = kp_colours[kp_idx]
