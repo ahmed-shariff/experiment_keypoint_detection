@@ -144,16 +144,22 @@ def main():
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
             cv2.circle(frame, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
 
-            
             # Print the object time, object ID , x, y
             # These points are from the orginal frame
-            print(datetime.now(), ";", objectID, ";", centroid[0], ";", centroid[1])
-            cv2.circle(result, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+            transformed_points = cv2.perspectiveTransform(
+                centroid.reshape(1, 1, -1).astype(np.float), matrix)[0, 0]
+            if transformed_points[0] > 0 and transformed_points[1] > 0 and \
+               transformed_points[0] < result.shape[0] and transformed_points[1] < result.shape[1]:
+                print(datetime.now(), ";", objectID, ";",
+                      transformed_points[0], ";", transformed_points[1])
+                # cv2.circle(result, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
 
+                cv2.circle(result,
+                           (int(transformed_points[0]), int(transformed_points[1])),
+                           3, (255, 100, 0), 2)
 
-            # THE QUESTION HOW TO TRANSFORM GET THE PREPECTIVE TRANSFORMATION FOR THE ABOVE POINTS?
-            # HERE WHERE I NEED HELP WITH
-
+                # THE QUESTION HOW TO TRANSFORM GET THE PREPECTIVE TRANSFORMATION FOR THE ABOVE POINTS?
+                # HERE WHERE I NEED HELP WITH
 
         # show the output frame
         cv2.imshow("Frame", frame)
@@ -163,6 +169,8 @@ def main():
         # if the `q` key was pressed, break from the loop
         if key == ord("q"):
             break
+        if key == ord("d"):
+            mouse_capturing.pointList = []
 
     # do a bit of cleanup
     cv2.destroyAllWindows()
