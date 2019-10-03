@@ -1,14 +1,14 @@
 # USAGE
-# python object_tracker.py --prototxt deploy.prototxt --model res10_300x300_ssd_iter_140000.caffemodel
+# python object_tracker.py -v 20190923_144136.mp4
 
 # import the necessary packages
 from pyimagesearch.centroidtracker import CentroidTracker
-from imutils.video import VideoStream
 import numpy as np
 import argparse
-import imutils
 import time
 import cv2
+import os
+import keyboard
 from datetime import datetime
 
 from test import TestKeypointRcnn, torch_tensor_to_img
@@ -28,8 +28,9 @@ class MouseCapture():
             # print("Double click")
             self.pointList.append((x, y))
 
-
 def main():
+    # start without log the data
+    logging = False
     mouse_capturing = MouseCapture([])
     # construct the argument parse and parse the arguments
     ap = argparse.ArgumentParser()
@@ -46,6 +47,14 @@ def main():
     # initialize our centroid tracker and frame dimensions
     ct = CentroidTracker()
     (H, W) = (None, None)
+
+    # create file to write the data to
+    if os.path.exists("datasetPoints.csv"):
+        dataPoints = open("datasetPoints.csv", "w")
+    else:
+        dataPoints = open("datasetPoints.csv", "w+")
+
+    dataPoints.write('Datetime,ObjectID,xLocation,yLocation\n')
 
     # load our serialized model from disk
     print("[INFO] loading model...")
@@ -70,6 +79,7 @@ def main():
     # loop over the frames from the video stream
     while True:
         # read the next frame from the video stream and resize it
+        time.sleep(2.0)
         r, frame = vs.read()
         result = frame
         # frame = imutils.resize(frame, width=800)
@@ -148,18 +158,22 @@ def main():
             # These points are from the orginal frame
             transformed_points = cv2.perspectiveTransform(
                 centroid.reshape(1, 1, -1).astype(np.float), matrix)[0, 0]
-            if transformed_points[0] > 0 and transformed_points[1] > 0 and \
-               transformed_points[0] < result.shape[0] and transformed_points[1] < result.shape[1]:
-                print(datetime.now(), ";", objectID, ";",
-                      transformed_points[0], ";", transformed_points[1])
-                # cv2.circle(result, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+            # if logging is activited
+            if(logging):
+                # log the interested area
+                if transformed_points[0] > 0 and transformed_points[1] > 0 and \
+                   transformed_points[0] < result.shape[0] and transformed_points[1] < result.shape[1]:
+                    print(datetime.now(), ";", objectID, ";",transformed_points[0], ";", transformed_points[1])
+                    # write to the file
+                    dataPoints.write('{0},{1},{2},{3}\n'.format(datetime.now(),objectID,transformed_points[0],transformed_points[1]))
+                    # cv2.circle(result, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
 
-                cv2.circle(result,
-                           (int(transformed_points[0]), int(transformed_points[1])),
-                           3, (255, 100, 0), 2)
+                    cv2.circle(result,
+                               (int(transformed_points[0]), int(transformed_points[1])),
+                               3, (255, 100, 0), 2)
 
-                # THE QUESTION HOW TO TRANSFORM GET THE PREPECTIVE TRANSFORMATION FOR THE ABOVE POINTS?
-                # HERE WHERE I NEED HELP WITH
+                    # THE QUESTION HOW TO TRANSFORM GET THE PREPECTIVE TRANSFORMATION FOR THE ABOVE POINTS?
+                    # HERE WHERE I NEED HELP WITH
 
         # show the output frame
         cv2.imshow("Frame", frame)
@@ -167,13 +181,20 @@ def main():
         key = cv2.waitKey(1) & 0xFF
 
         # if the `q` key was pressed, break from the loop
+
         if key == ord("q"):
             break
         if key == ord("d"):
             mouse_capturing.pointList = []
+        if key == ord("r"):
+            logging = True
+        if key == ord("s"):
+            logging = False
 
     # do a bit of cleanup
     cv2.destroyAllWindows()
+    # close the file
+    dataPoints.close()
     # vs.stop()
 
 

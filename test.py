@@ -8,7 +8,9 @@ from torchvision import transforms
 if torch.cuda.is_available():
     DEVICE = 'cuda'
 else:
-    DEVICE = 'cpu'
+    DEVICE = 'cuda'
+    #DEVICE = 'cpu'
+
 
 
 def video_test():
