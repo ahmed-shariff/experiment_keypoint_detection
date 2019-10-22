@@ -1,6 +1,6 @@
 # USAGE
 # python object_tracker.py -v 20190923_144136.mp4
-
+# python object_tracker.py -v 20191010_155216.mp4 -f 30
 # import the necessary packages
 from pyimagesearch.centroidtracker import CentroidTracker
 import numpy as np
@@ -30,12 +30,15 @@ class MouseCapture():
 
 def main():
     # start without log the data
-    logging = False
+    loggingPrespective = False
+    loggingNormal = False
     mouse_capturing = MouseCapture([])
     # construct the argument parse and parse the arguments
     ap = argparse.ArgumentParser()
     ap.add_argument("-v", "--video_source", required=False, default='/dev/video0',
                     help="The video to use as a source")
+    ap.add_argument("-f", "--framesToEscape", required=False, default=30,
+                    help="Capture data every 30 frames")
     ap.add_argument("-p", "--prototxt", required=False,
                     help="path to Caffe 'deploy' prototxt file")
     ap.add_argument("-c", "--confidence", type=float, default=0.5,
@@ -69,18 +72,35 @@ def main():
     # initialize the video stream and allow the camera sensor to warmup
     print("[INFO] starting video stream...")
     vs = cv2.VideoCapture(args['video_source'])
+    framecount = 0
+
+    # Find OpenCV version
+    (major_ver, minor_ver, subminor_ver) = (cv2.__version__).split('.')
+    # With webcam get(CV_CAP_PROP_FPS) does not work.
+    # Let's see for ourselves.
+
+    if int(major_ver) < 3:
+        fps = vs.get(cv2.cv.CV_CAP_PROP_FPS)
+        # FrameRate = cv2.VideoCapture(args['framesToEscape'])
+        print("Frames per second using video.get(cv2.cv.CV_CAP_PROP_FPS): {0}".format(fps))
+    else:
+        fps = vs.get(cv2.CAP_PROP_FPS)
+        # FrameRate = cv2.VideoCapture(args['framesToEscape'])
+        print("Frames per second using video.get(cv2.CAP_PROP_FPS) : {0}".format(fps))
+
     # create the frame windows
     cv2.namedWindow("Frame")
     # attach the mouse call bace event to the windows
     cv2.setMouseCallback("Frame", mouse_capturing)
     # store the 4 points that will be prespctive transormed in the list
-    time.sleep(2.0)
+    #time.sleep(2.0)
 
     # loop over the frames from the video stream
     while True:
         # read the next frame from the video stream and resize it
-        time.sleep(2.0)
+        # time.sleep(2.0)
         r, frame = vs.read()
+        framecount += 1
         result = frame
         # frame = imutils.resize(frame, width=800)
 
@@ -154,26 +174,32 @@ def main():
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
             cv2.circle(frame, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
 
-            # Print the object time, object ID , x, y
-            # These points are from the orginal frame
-            transformed_points = cv2.perspectiveTransform(
-                centroid.reshape(1, 1, -1).astype(np.float), matrix)[0, 0]
-            # if logging is activited
-            if(logging):
-                # log the interested area
-                if transformed_points[0] > 0 and transformed_points[1] > 0 and \
-                   transformed_points[0] < result.shape[0] and transformed_points[1] < result.shape[1]:
-                    print(datetime.now(), ";", objectID, ";",transformed_points[0], ";", transformed_points[1])
-                    # write to the file
-                    dataPoints.write('{0},{1},{2},{3}\n'.format(datetime.now(),objectID,transformed_points[0],transformed_points[1]))
-                    # cv2.circle(result, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+            # captured data after 30 frame
+            if framecount >= (fps * 10):
+                print('Frame number', framecount)
+                framecount = 0
 
-                    cv2.circle(result,
-                               (int(transformed_points[0]), int(transformed_points[1])),
-                               3, (255, 100, 0), 2)
+                if (loggingNormal):
+                    dataPoints.write(
+                    '{0},{1},{2},{3}\n'.format(datetime.now(), objectID, centroid[0], centroid[1]))
 
-                    # THE QUESTION HOW TO TRANSFORM GET THE PREPECTIVE TRANSFORMATION FOR THE ABOVE POINTS?
-                    # HERE WHERE I NEED HELP WITH
+                # Print the object time, object ID , x, y
+                # These points are from the orginal frame
+                transformed_points = cv2.perspectiveTransform(
+                    centroid.reshape(1, 1, -1).astype(np.float), matrix)[0, 0]
+                # if logging is activited
+                if(loggingPrespective):
+                    # log the interested area
+                    if transformed_points[0] > 0 and transformed_points[1] > 0 and \
+                       transformed_points[0] < result.shape[0] and transformed_points[1] < result.shape[1]:
+                        print(datetime.now(), ";", objectID, ";",transformed_points[0], ";", transformed_points[1])
+                        # write to the file
+                        dataPoints.write('{0},{1},{2},{3}\n'.format(datetime.now(),objectID,transformed_points[0],transformed_points[1]))
+                        # cv2.circle(result, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+
+                        cv2.circle(result,
+                                   (int(transformed_points[0]), int(transformed_points[1])),
+                                   3, (255, 100, 0), 2)
 
         # show the output frame
         cv2.imshow("Frame", frame)
@@ -187,7 +213,9 @@ def main():
         if key == ord("d"):
             mouse_capturing.pointList = []
         if key == ord("r"):
-            logging = True
+            loggingPrespective = True
+        if key == ord("n"):
+            loggingNormal = True
         if key == ord("s"):
             logging = False
 
