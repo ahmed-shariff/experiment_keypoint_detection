@@ -9,6 +9,7 @@ import time
 import cv2
 import os
 import keyboard
+import csv
 from datetime import datetime
 
 from test import TestKeypointRcnn, torch_tensor_to_img
@@ -28,7 +29,8 @@ class MouseCapture():
             # print("Double click")
             self.pointList.append((x, y))
 
-def main():
+
+def main(dataPoints_normal, dataPoints_perspective):
     # start without log the data
     loggingPrespective = False
     loggingNormal = False
@@ -52,12 +54,10 @@ def main():
     (H, W) = (None, None)
 
     # create file to write the data to
-    if os.path.exists("datasetPoints.csv"):
-        dataPoints = open("datasetPoints.csv", "w")
-    else:
-        dataPoints = open("datasetPoints.csv", "w+")
-
-    dataPoints.write('Datetime,ObjectID,xLocation,yLocation\n')
+    # if os.path.exists("datasetPoints.csv"):
+    #     dataPoints = open("datasetPoints.csv", "w")
+    # else:
+    #     dataPoints = open("datasetPoints.csv", "w+")
 
     # load our serialized model from disk
     print("[INFO] loading model...")
@@ -175,13 +175,17 @@ def main():
             cv2.circle(frame, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
 
             # captured data after 30 frame
-            if framecount >= (fps * 10):
-                print('Frame number', framecount)
+            if framecount >= fps:
+                # print('Frame number', framecount)
                 framecount = 0
 
-                if (loggingNormal):
-                    dataPoints.write(
-                    '{0},{1},{2},{3}\n'.format(datetime.now(), objectID, centroid[0], centroid[1]))
+                if loggingNormal:
+                    # print("wrote normal")
+                    dataPoints_normal.writerow({'Datetime': datetime.now(),
+                                                'ObjectID': objectID,
+                                                'xLocation': centroid[0],
+                                                'yLocation': centroid[1]})
+                    # '{0},{1},{2},{3}\n'.format(datetime.now(), objectID, centroid[0], centroid[1]))
 
                 # Print the object time, object ID , x, y
                 # These points are from the orginal frame
@@ -192,9 +196,14 @@ def main():
                     # log the interested area
                     if transformed_points[0] > 0 and transformed_points[1] > 0 and \
                        transformed_points[0] < result.shape[0] and transformed_points[1] < result.shape[1]:
-                        print(datetime.now(), ";", objectID, ";",transformed_points[0], ";", transformed_points[1])
+                        # print(datetime.now(), ";", objectID, ";",transformed_points[0], ";", transformed_points[1])
+                        # print("wrote Perspective")
                         # write to the file
-                        dataPoints.write('{0},{1},{2},{3}\n'.format(datetime.now(),objectID,transformed_points[0],transformed_points[1]))
+                        dataPoints_perspective.writerow({'Datetime': datetime.now(),
+                                                         'ObjectID': objectID,
+                                                         'xLocation': transformed_points[0],
+                                                         'yLocation': transformed_points[1]})
+                        # .write('{0},{1},{2},{3}\n'.format(datetime.now(),objectID,transformed_points[0],transformed_points[1]))
                         # cv2.circle(result, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
 
                         cv2.circle(result,
@@ -213,8 +222,10 @@ def main():
         if key == ord("d"):
             mouse_capturing.pointList = []
         if key == ord("r"):
+            print("[INFO] Starting to log perspective")
             loggingPrespective = True
         if key == ord("n"):
+            print("[INFO] Starting to log normal")
             loggingNormal = True
         if key == ord("s"):
             logging = False
@@ -222,9 +233,19 @@ def main():
     # do a bit of cleanup
     cv2.destroyAllWindows()
     # close the file
-    dataPoints.close()
+    # dataPoints.close()
     # vs.stop()
 
 
 if __name__ == "__main__":
-    main()
+    f1 = open("datasetPointsNormal.csv", "w")
+    f2 = open("datasetPointsPerspective.csv", "w")
+    dataPoints_normal = csv.DictWriter(f1,
+                                       ['Datetime', 'ObjectID', 'xLocation', 'yLocation'])
+    dataPoints_perspective = csv.DictWriter(f2,
+                                            ['Datetime', 'ObjectID', 'xLocation', 'yLocation'])
+    try:
+        main(dataPoints_normal=dataPoints_normal, dataPoints_perspective=dataPoints_perspective)
+    finally:
+        f1.close()
+        f2.close()
