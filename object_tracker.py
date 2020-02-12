@@ -11,8 +11,10 @@ import os
 import keyboard
 import csv
 from datetime import datetime
+import sys
+from pathlib import Path
 
-from test import TestKeypointRcnn, torch_tensor_to_img
+sys.path.insert(0, str(Path(__file__).parent / "modules" / "Person-Detection-and-Tracking"))
 
 
 # function to capture the point from the frame.
@@ -66,12 +68,10 @@ def main(dataPoints_normal, dataPoints_perspective):
     pts1 = np.float32([[155, 120], [480, 120], [20, 475], [620, 475]])
     pts1 = np.float32([[0, 0], [out_size, 0], [0, out_size], [out_size, out_size]])
 
-    # net = cv2.dnn.readNetFromCaffe(args["prototxt"], args["model"])
-    net = TestKeypointRcnn(920, out_size)
-
     # initialize the video stream and allow the camera sensor to warmup
-    print("[INFO] starting video stream...")
+    print(f"[INFO] starting video stream from source: {args['video_source']}")
     vs = cv2.VideoCapture(args['video_source'])
+    print(vs.read())
     framecount = 0
 
     # Find OpenCV version
@@ -95,6 +95,13 @@ def main(dataPoints_normal, dataPoints_perspective):
     # store the 4 points that will be prespctive transormed in the list
     #time.sleep(2.0)
 
+    # from test import TestKeypointRcnn, torch_tensor_to_img
+    from Person_det_track import Pipeline
+
+    # net = cv2.dnn.readNetFromCaffe(args["prototxt"], args["model"])
+    # net = TestKeypointRcnn(920, out_size)
+    net = Pipeline()
+
     # loop over the frames from the video stream
     while True:
         # read the next frame from the video stream and resize it
@@ -114,11 +121,21 @@ def main(dataPoints_normal, dataPoints_perspective):
         # blob = cv2.dnn.blobFromImage(frame, 1.0, (W, H),
         #                              (104.0, 177.0, 123.0))
 
-        predictions, frame = net(frame)
         rects = []
-        frame = torch_tensor_to_img(frame)
-        result = frame.copy()
+        #################################################################
+        # When using the rcnn model in test.py
+        # predictions, frame = net(frame)
+        # frame = torch_tensor_to_img(frame)
+        # result = frame.copy()
+        # predictions_length = predictions['boxes'].shape[0]
+        #################################################################
 
+        #################################################################
+        # When using the Person_det_track.py from the
+        # Person-Detection-and-Tracking
+        new_frame, predictions = net(frame)
+        predictions_length = len(predictions)
+        #################################################################
         # if the frame dimensions are None, grab them
         if W is None or H is None:
             (H, W) = frame.shape[:2]
@@ -147,13 +164,25 @@ def main(dataPoints_normal, dataPoints_perspective):
         result = cv2.warpPerspective(frame, matrix, result.shape[:2])
 
         # loop over the detections
-        for i in range(0, predictions['boxes'].shape[0]):
+        for i in range(0, predictions_length):
             # filter out weak detections by ensuring the predicted
             # probability is greater than a minimum threshold
-            if predictions['scores'][i] > args["confidence"]:
+
+            # # If using the pytorch version in test.py
+            # score = predictions['scores'][i]
+
+            # # If using the Person-Detection-and-Tracking
+            score = 1
+
+            if score > args["confidence"]:
                 # compute the (x, y)-coordinates of the bounding box for
                 # the object, then update the bounding box rectangles list
-                box = predictions['boxes'][i].cpu().detach().numpy()
+
+                # # If using the pytorch version in test.py
+                # box = predictions['boxes'][i].cpu().detach().numpy()
+
+                # # If using the Person-Detection-and-Tracking
+                box = np.array(predictions[i].box)
                 rects.append(box.astype("int"))
 
                 # draw a bounding box surrounding the object so we can

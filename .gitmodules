@@ -3,4 +3,4 @@
 	url = https://github.com/kimyoon-young/centerNet-deep-sort.git
 [submodule "Person-Detection-and-Tracking"]
 	path = modules/Person-Detection-and-Tracking
-	url = https://github.com/ambakick/Person-Detection-and-Tracking.git
+	url = https://github.com/ahmed-shariff/Person-Detection-and-Tracking.git
