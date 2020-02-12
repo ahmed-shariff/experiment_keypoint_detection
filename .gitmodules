@@ -1,0 +1,3 @@
+[submodule "centerNet-deep-sort"]
+	path = modules/centerNet-deep-sort
+	url = https://github.com/kimyoon-young/centerNet-deep-sort.git
