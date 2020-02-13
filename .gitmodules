@@ -4,3 +4,6 @@
 [submodule "Person-Detection-and-Tracking"]
 	path = modules/Person-Detection-and-Tracking
 	url = https://github.com/ahmed-shariff/Person-Detection-and-Tracking.git
+[submodule "modules/human-pose-estimation.pytorch"]
+	path = modules/human-pose-estimation.pytorch
+	url = https://github.com/ahmed-shariff/human-pose-estimation.pytorch.git
