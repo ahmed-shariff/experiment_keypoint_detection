@@ -10,3 +10,6 @@
 [submodule "modules/lighttrack"]
 	path = modules/lighttrack
 	url = https://github.com/ahmed-shariff/lighttrack.git
+[submodule "modules/deep_dort_yolov3-tf"]
+	path = modules/deep_dort_yolov3-tf
+	url = https://github.com/Qidian213/deep_sort_yolov3.git
