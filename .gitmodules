@@ -7,3 +7,6 @@
 [submodule "modules/human-pose-estimation.pytorch"]
 	path = modules/human-pose-estimation.pytorch
 	url = https://github.com/ahmed-shariff/human-pose-estimation.pytorch.git
+[submodule "modules/lighttrack"]
+	path = modules/lighttrack
+	url = https://github.com/ahmed-shariff/lighttrack.git
