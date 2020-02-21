@@ -13,3 +13,6 @@
 [submodule "modules/deep_dort_yolov3-tf"]
 	path = modules/deep_dort_yolov3-tf
 	url = https://github.com/Qidian213/deep_sort_yolov3.git
+[submodule "modules/pytorch-mot-tracking"]
+	path = modules/pytorch-mot-tracking
+	url = https://github.com/afunTW/pytorch-mot-tracking.git
